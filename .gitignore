@@ -1,0 +1,3 @@
+# Real data: database, real records and images (see SPEC.md, Privacy)
+data/
+*.db
