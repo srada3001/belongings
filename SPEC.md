@@ -22,8 +22,8 @@ Out of scope for now: currency conversion, serial numbers.
 
 | Column | Notes |
 |---|---|
-| `name` | Required, unique. |
-| `prefix` | Required, unique. Uppercase letters used in item codes (`E` for Electronics, `F` for Furniture). |
+| `name` | Required, unique (case-insensitive). |
+| `prefix` | Required, unique. One uppercase letter (`A`–`Z`) used in item codes (`E` for Electronics, `F` for Furniture). |
 
 ### locations
 
@@ -31,7 +31,7 @@ Places that are not possessions: a house, a room, a closet.
 
 | Column | Notes |
 |---|---|
-| `name` | Required. Unique within its parent. |
+| `name` | Required. Unique within its parent, and among top-level places (case-insensitive). |
 | `parent_id` | Location that contains it; empty for top-level places. |
 
 ### items
@@ -41,19 +41,21 @@ Places that are not possessions: a house, a room, a closet.
 | `id` | Integer primary key with no meaning (surrogate key). |
 | `code` | Unique, optional. See [Codes](#codes). |
 | `name` | Required. |
-| `category_id` | Optional. |
+| `category_id` | Required. |
 | `brand` | |
 | `model` | |
 | `price_minor` | Integer, in hundredths of the currency unit (US$19.99 → `1999`). |
 | `currency` | ISO 4217 code: `COP` or `USD`. |
-| `acquired_on` | Partial ISO 8601 date: `YYYY`, `YYYY-MM` or `YYYY-MM-DD`. |
+| `acquired_on` | Partial ISO 8601 date: `YYYY`, `YYYY-MM` or `YYYY-MM-DD`; it must be a real date (no `2023-02-30`). |
 | `location_id` | Place where the item is. |
 | `container_id` | Item it is stored in. |
-| `accessory_of_id` | Item it belongs to (spare parts, remote controls…). Deleting that item deletes its accessories. |
+| `accessory_of_id` | Item it belongs to (spare parts, remote controls…). |
 | `is_container` | Whether other items can be stored in it. Defaults to false. |
 | `notes` | Free text. |
 
 ### images
+
+Not in the schema yet.
 
 | Column | Notes |
 |---|---|
@@ -71,9 +73,15 @@ Places that are not possessions: a house, a room, a closet.
 ### Location
 
 - An item is either in a place (`location_id`) or in a container (`container_id`), never both. Both empty means unknown.
-- A container must have `is_container` set.
+- A container must have `is_container` set, and a container with items in it cannot stop being one. Triggers enforce both.
 - No cycles: an item cannot end up inside itself, directly or through other items; the same applies to locations. The app enforces this (a `CHECK` constraint cannot look at other rows).
 - An accessory's location is independent of the item it belongs to (the chair is in the bedroom, its spare screws in a toolbox).
+
+### Deletion
+
+- A location cannot be deleted while it contains locations or items.
+- An item cannot be deleted while it contains items.
+- Deleting an item deletes its accessories.
 
 ### Price and date
 
